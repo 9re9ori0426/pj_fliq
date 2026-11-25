@@ -1,0 +1,105 @@
+/* 로그인과 회원가입은 홈과 같은 FLIQ 색상과 버튼을 사용한다. */
+body.fliq-auth {
+    min-height: 100vh;
+    padding: 48px 20px;
+    background: var(--fliq-surface);
+}
+
+.fliq-auth__shell {
+    width: 100%;
+    max-width: 440px;
+    margin: 0 auto;
+}
+
+.fliq-auth__header {
+    margin-bottom: 22px;
+}
+
+.fliq-auth__card {
+    padding: 32px;
+    border: 1px solid var(--fliq-line);
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: 0 8px 28px rgba(25, 45, 66, 0.06);
+}
+
+.fliq-auth__title {
+    margin: 0 0 24px;
+    font-size: 26px;
+    line-height: 1.3;
+}
+
+.fliq-auth__form {
+    display: grid;
+    gap: 16px;
+}
+
+.fliq-auth__field {
+    display: grid;
+    gap: 6px;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.fliq-auth__field input {
+    width: 100%;
+    min-height: 46px;
+    padding: 10px 12px;
+    border: 1px solid var(--fliq-line);
+    border-radius: 9px;
+    background: #fff;
+    color: var(--fliq-ink);
+    font: inherit;
+    font-weight: 400;
+}
+
+.fliq-auth__field input:focus {
+    border-color: var(--fliq-blue);
+}
+
+.fliq-auth__submit {
+    width: 100%;
+    margin-top: 4px;
+}
+
+.fliq-auth__message {
+    margin: 0 0 18px;
+    padding: 10px 12px;
+    border-left: 3px solid var(--fliq-blue);
+    border-radius: 6px;
+    background: var(--fliq-surface);
+    color: var(--fliq-ink);
+    font-size: 14px;
+}
+
+.fliq-auth__footer {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px 10px;
+    margin: 24px 0 0;
+    color: var(--fliq-muted);
+    font-size: 14px;
+}
+
+.fliq-auth__footer a {
+    color: var(--fliq-blue);
+    font-weight: 700;
+    text-underline-offset: 3px;
+}
+
+.fliq-auth :focus-visible {
+    outline: 2px solid var(--fliq-blue);
+    outline-offset: 3px;
+}
+
+@media (max-width: 480px) {
+    body.fliq-auth {
+        padding: 28px 16px;
+    }
+
+    .fliq-auth__card {
+        padding: 24px 20px;
+    }
+}
+

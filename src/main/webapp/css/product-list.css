@@ -1,0 +1,86 @@
+/* 메인과 검색 화면에서 공통으로 쓰는 상품 목록 */
+.fliq-product-list .fliq-section-title {
+    margin-bottom: 14px;
+}
+
+.fliq-product-list .fliq-product-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 20px;
+}
+
+.fliq-product-list .fliq-card {
+    min-width: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+.fliq-product-list .fliq-card:hover {
+    box-shadow: 0 4px 16px rgba(25, 45, 66, 0.08);
+}
+
+.fliq-product-list .fliq-card__thumbnail {
+    display: grid;
+    place-items: center;
+    height: auto;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    border-bottom: 1px solid var(--fliq-line);
+    border-radius: 0;
+    background: var(--fliq-surface);
+    color: var(--fliq-muted);
+    font-size: 14px;
+}
+
+.fliq-card__image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.fliq-card__body {
+    padding: 14px 16px 16px;
+}
+
+.fliq-product-list .fliq-card__title {
+    margin: 0 0 8px;
+    font-size: 17px;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+
+.fliq-product-list .fliq-card__price {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 750;
+}
+
+.fliq-card__type {
+    margin: 0;
+    color: var(--fliq-muted);
+    font-size: 14px;
+}
+
+.fliq-product-list__empty {
+    grid-column: 1 / -1;
+    margin: 0;
+    padding: 26px 12px;
+    border: 1px dashed var(--fliq-line);
+    border-radius: 13px;
+    color: var(--fliq-muted);
+    background: #fff;
+    text-align: center;
+}
+
+@media (max-width: 760px) {
+    .fliq-product-list .fliq-product-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+    }
+}
+
+@media (max-width: 420px) {
+    .fliq-product-list .fliq-product-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}

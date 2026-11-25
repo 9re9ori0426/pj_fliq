@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="fliqSql">
+    <select id="recentProducts"
+    resultType="com.fliq.fliq.listing.ListingSearchDTO">
+        SELECT p.p_id, p.p_title, p.p_sale_type, p.p_sale_price, i.pi_storage
+        FROM product p
+        <!-- 사진이 없는 상품도 목록에 남긴다. -->
+        LEFT JOIN product_image i ON p.p_id = i.pi_product_id
+        WHERE p.p_sale_status != 'DELETED'
+        <!-- 등록 시각이 같으면 상품 번호가 큰 상품을 먼저 표시한다. -->
+        ORDER BY p.p_created_at DESC, p.p_id DESC
+        <!-- 메인에서는 최근 상품을 최대 3개만 조회한다. -->
+        FETCH FIRST 3 ROWS ONLY
+    </select>
+    <select id="searchProducts" parameterType="String" resultType="com.fliq.fliq.listing.ListingSearchDTO">
+        SELECT p.p_id, p.p_title, p.p_sale_type, p.p_sale_price, i.pi_storage
+        FROM product p
+        <!-- 사진이 없는 상품도 목록에 남긴다. -->
+        LEFT JOIN product_image i ON p.p_id = i.pi_product_id
+        WHERE p.p_sale_status != 'DELETED'
+            AND (p.p_title LIKE #{pattern} OR p.p_description LIKE #{pattern})
+        ORDER BY p.p_created_at DESC, p.p_id DESC
+    </select>
+
+    <!-- 이메일로 회원을 찾아 회원 ID를 조회하는기능.
+    이메일에 고유 제약이 있으므로 조회 결과는 최대 한 건
+    UserDAO에서 selectOne으로 호출하면 일치하는 회원의 ID를 얻을수있음
+    등록된 이메일이 없으면 null을 받는다.
+    또한 밑에 math.BigInteger는user_id가 20자리수를 넘어가기때문에
+    BigInteger는 그보다 큰 회원 ID도 정확히 담을 수 있는 Java 표준 타입-->
+    <select id="findUserIdByEmail"
+            parameterType="java.lang.String"
+            resultType="java.math.BigInteger">
+        SELECT user_id
+        FROM "USER"
+        WHERE email = #{email, jdbcType=VARCHAR}
+    </select>
+    <!-- 로그인 개발 전에는 DML.sql에 있는 실습 판매자의 실제 회원 번호를 사용한다. -->
+    <select id="findRegisterSampleSeller" resultType="java.lang.Long">
+        SELECT u_id
+        FROM users
+        WHERE u_email = 'user1@fliq.com'
+    </select>
+    <!-- 폼에서 입력한 카테고리 번호가 DB에 있는지 확인한다. -->
+    <select id="countRegisterCategory" parameterType="long" resultType="int">
+        SELECT COUNT(*)
+        FROM category
+        WHERE c_id = #{categoryId}
+    </select>
+    <!-- 상품 정보와 사진 행에서 같은 상품 번호를 사용한다. -->
+    <select id="nextRegisterProductId" resultType="long">
+        SELECT product_seq.NEXTVAL FROM dual
+    </select>
+
+    <insert id="insertProductImage"
+            parameterType="com.fliq.fliq.productregister.ProductRegisterDTO">
+        INSERT INTO product_image (pi_product_id, pi_storage)
+        VALUES (#{p_id}, #{pi_storage})
+    </insert>
+
+    <insert id="insertProduct"
+            parameterType="com.fliq.fliq.productregister.ProductRegisterDTO">
+        INSERT INTO product (
+        p_id, p_users_id, p_category_id, p_sale_type,
+        p_trade_ok, p_title, p_description, p_sale_price
+        )
+        <!-- DAO가 발급받은 상품 번호를 쓰고, 설명이 null이면 문자 타입으로 전달한다. -->
+        VALUES (
+        #{p_id}, #{p_users_id}, #{p_category_id}, 'SALE',
+        #{p_trade_ok}, #{p_title}, #{p_description, jdbcType=VARCHAR},
+        #{p_sale_price}
+        )
+    </insert>
+    <!-- DB 컬럼과 DTO 필드의 연결을 명시 -->
+    <resultMap id="signupUserMap" type="com.fliq.fliq.signup.SignupDTO">
+        <id property="u_id" column="u_id"/>
+        <result property="u_email" column="u_email"/>
+        <result property="u_password" column="u_password"/>
+        <result property="u_nickname" column="u_nickname"/>
+    </resultMap>
+    <!-- 유저를 추가하는로직 -->
+    <insert id="insertUser" parameterType="com.fliq.fliq.signup.SignupDTO">
+        INSERT INTO users (u_id, u_email, u_password, u_nickname)
+        VALUES (users_seq.NEXTVAL, #{u_email}, #{u_password}, #{u_nickname})
+    </insert>
+    <!-- 유저 업데이트 로직 -->
+    <update id="editUser" parameterType="com.fliq.fliq.signup.SignupDTO">
+        UPDATE users
+        SET u_password = #{u_password},
+        u_nickname = #{u_nickname}
+        WHERE u_id = #{u_id}
+    </update>
+    <!--  유저 삭제로직  -->
+    <delete id="deleteUser" parameterType="com.fliq.fliq.signup.SignupDTO">
+        DELETE FROM users
+        WHERE u_id = #{u_id}
+        AND u_password = #{u_password}
+    </delete>
+
+    <select id="countUserByEmail" parameterType="string" resultType="int">
+        SELECT COUNT(*)
+        FROM users
+        WHERE u_email = #{value, jdbcType=VARCHAR}
+    </select>
+    <!-- 로그인 이메일로 회원조회 -->
+    <select id="findUserByEmail"
+            parameterType="string"
+            resultMap="signupUserMap">
+        SELECT u_id, u_email, u_password, u_nickname
+        FROM users
+        WHERE u_email = #{value, jdbcType=VARCHAR}
+    </select>
+<!-- 메세지룸id로 메세지들 조회 (생성 시간별로 정렬, 시간이 같으면 id로 정렬) -->
+    <select id="findChatMessagesByRoomId" resultType="com.fliq.fliq.chat.ChatMessageDTO">
+        SELECT cm_id, cm_sender_id, cm_text_body
+        FROM chat_message
+        WHERE cm_chat_room_id = #{roomId}
+        ORDER BY cm_created_at, cm_id
+    </select>
+<!--  -->
+    <select id="findChatRoomByRoomId" resultType="com.fliq.fliq.chat.ChatRoomDTO">
+        SELECT cr_id, cr_product_id, cr_seller_id, cr_buyer_id
+        FROM chat_room
+        WHERE cr_id = #{roomId}
+    </select>
+</mapper>

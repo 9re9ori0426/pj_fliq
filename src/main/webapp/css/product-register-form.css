@@ -1,0 +1,31 @@
+/* 등록 화면의 카드와 입력칸만 꾸민다. */
+.register-page { max-width: 704px; margin: 24px auto; }
+.register-page .fliq-header { min-height: 60px; padding: 10px 20px; }
+.register-content { padding: 20px; }
+.register-card {
+    padding: 20px;
+    border: 1px solid var(--fliq-line);
+    border-radius: 12px;
+    background: #fff;
+}
+.register-card h1 { margin: 0 0 6px; font-size: 26px; }
+.register-note { margin: 0 0 18px; color: var(--fliq-muted); }
+.register-status { margin: 0 0 16px; padding: 10px 12px; border-radius: 8px; }
+.register-success { background: #edf7ef; color: #21633e; }
+.register-error { background: #fff1f1; color: #9d2828; }
+.register-field { display: block; margin-bottom: 14px; font-weight: 700; }
+.register-field input, .register-field textarea {
+    display: block;
+    width: 100%;
+    margin-top: 5px;
+    padding: 10px 12px;
+    border: 1px solid var(--fliq-line);
+    border-radius: 8px;
+    color: var(--fliq-ink);
+    background: #fff;
+    font: inherit;
+    font-weight: 400;
+}
+.register-field textarea { min-height: 76px; resize: vertical; }
+.register-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+.register-actions .fliq-button { min-height: 44px; font-size: 16px; }
