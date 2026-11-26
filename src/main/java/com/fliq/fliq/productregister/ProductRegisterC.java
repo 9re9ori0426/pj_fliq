@@ -26,7 +26,7 @@ public class ProductRegisterC extends HttpServlet {
         if ("1".equals(request.getParameter("registered"))) {
             request.setAttribute("registerSuccess", true);
         }
-
+        ProductRegisterDAO.selectAllCategory(request);
         request.getRequestDispatcher("/listing/product-form.jsp")
                 .forward(request, response);
     }

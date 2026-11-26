@@ -19,12 +19,7 @@
     <main class="fliq-auth__card">
         <h1 class="fliq-auth__title">로그인</h1>
 
-<form action="<c:url value='/login'/>" method="post">
-    <input type="hidden" name="returnTo" value="<c:out value='${returnTo}'/>">
-    이메일 <input type="text" name="u_email" autocomplete="username"><br>
-    비밀번호 <input type="password" name="u_password" autocomplete="current-password"><br>
-    <button type="submit">로그인</button>
-</form>
+
         <%-- 로그인 실패 메시지는 같은 요청으로 전달받아 표시한다. --%>
         <c:if test="${not empty msg}">
             <p class="fliq-auth__message" role="alert"><c:out value="${msg}"/></p>
