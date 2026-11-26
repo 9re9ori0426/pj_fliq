@@ -19,7 +19,7 @@ public class ListingSearchDAO {
     public void recentProducts(HttpServletRequest request) throws IOException {
         SqlSession ss = MyBatisDB.connect();
         try {
-            List<ListingSearchDTO> products = ss.selectList("fliqSql.recentProducts");
+            List<ListingSearchDTO> products = ss.selectList("productMapper.recentProducts");
 
             // 최근 상품 목록을 index.jsp에서 읽을 수 있게 담아 둔다.
             request.setAttribute("products", products);
@@ -43,7 +43,7 @@ public class ListingSearchDAO {
             SqlSession ss = MyBatisDB.connect();
             try {
                 // 매퍼 ID는 namespace.selectId 형식이다. pattern은 SQL의 #{pattern}에 전달한다.
-                products = ss.selectList("fliqSql.searchProducts", pattern);
+                products = ss.selectList("productMapper.searchProducts", pattern);
             } finally {
                 // 조회 중 예외가 발생해도 세션은 닫는다.
                 ss.close();

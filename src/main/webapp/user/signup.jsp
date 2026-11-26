@@ -1,4 +1,5 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -17,6 +18,10 @@
 
     <main class="fliq-auth__card">
         <h1 class="fliq-auth__title">회원가입</h1>
+        <%-- 가입에 실패했을 때 DAO가 보낸 메시지를 표시한다. --%>
+        <c:if test="${not empty msg}">
+            <p class="fliq-auth__message"><c:out value="${msg}"/></p>
+        </c:if>
 
         <form class="fliq-auth__form" action="${pageContext.request.contextPath}/sign-up" method="post">
             <label class="fliq-auth__field">

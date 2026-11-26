@@ -9,7 +9,7 @@ import javax.servlet.http.HttpSession;
 public class SignupDAO {
 
     // 기존 SignupC의 SignupDAO.addUser(request) 호출 방식을 유지한다.
-    public static void addUser(HttpServletRequest request) {
+    public static boolean addUser(HttpServletRequest request) {
         try (SqlSession sqlS = MyBatisDB.connect()) {
             String u_email = request.getParameter("u_email");
             String u_password = request.getParameter("u_password");
@@ -21,14 +21,16 @@ public class SignupDAO {
             if (sqlS.insert("fliqSql.insertUser", users) == 1) {
                 sqlS.commit();
                 System.out.println("add success");
-                request.setAttribute("msg", "회원가입 성공");
+                return true;
             } else {
                 request.setAttribute("msg", "회원가입에 실패했습니다.");
             }
         } catch (Exception e) {
             e.printStackTrace();
             request.setAttribute("msg", "회원가입 처리 중 오류가 발생했습니다.");
+
         }
+        return false;
     }
 
     public static boolean loginCheck(HttpServletRequest request) {
@@ -45,7 +47,8 @@ public class SignupDAO {
             user = (SignupDTO) hs.getAttribute("user");
         }
 
-        return false;
+        // 세션에서 로그인한 회원을 찾았으면 true를 반환한다.
+        return user != null;
     }
 
     public static void login(HttpServletRequest request) {

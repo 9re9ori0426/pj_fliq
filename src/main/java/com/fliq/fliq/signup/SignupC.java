@@ -17,8 +17,12 @@ public class SignupC extends HttpServlet {
 
     public void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
         request.setCharacterEncoding("UTF-8");
-        SignupDAO.addUser(request);
-        // DAO가 담은 msg도 같은 request로 JSP에 전달한다.
-        response.sendRedirect(request.getContextPath() + "/home");
+        if (SignupDAO.addUser(request)) {
+            response.sendRedirect(request.getContextPath() + "/home");
+            return;
+        }
+
+        // 가입에 실패하면 DAO가 담은 메시지를 같은 요청으로 JSP에 전달한다.
+        request.getRequestDispatcher("/user/signup.jsp").forward(request, response);
     }
 }
