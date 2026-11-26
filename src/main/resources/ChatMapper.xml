@@ -3,6 +3,17 @@
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="chatMapper">
-
-    
+    <!-- 룸id로 메세지들 조회 (생성 시간별로 정렬, 시간이 같으면 id로 정렬) -->
+    <select id="findChatMessagesByRoomId" resultType="com.fliq.fliq.chat.ChatMessageDTO">
+        SELECT cm_id, cm_sender_id, cm_text_body
+        FROM chat_message
+        WHERE cm_chat_room_id = #{roomId}
+        ORDER BY cm_created_at, cm_id
+    </select>
+    <!-- 룸id로 룸 정보 조회 -->
+    <select id="findChatRoomByRoomId" resultType="com.fliq.fliq.chat.ChatRoomDTO">
+        SELECT cr_id, cr_product_id, cr_seller_id, cr_buyer_id
+        FROM chat_room
+        WHERE cr_id = #{roomId}
+    </select>
 </mapper>

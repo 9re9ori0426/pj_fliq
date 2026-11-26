@@ -10,7 +10,7 @@ public class ChatRoomDAO {
 
     public static void getChatRoomById(HttpServletRequest request, long roomId) {
         try (SqlSession ss = MyBatisDB.connect()) {
-            ChatRoomDTO room = ss.selectOne("fliqSql.findChatRoomByRoomId", roomId);
+            ChatRoomDTO room = ss.selectOne("chatMapper.findChatRoomByRoomId", roomId);
             request.setAttribute("room", room);
         }
         catch (Exception e) {
