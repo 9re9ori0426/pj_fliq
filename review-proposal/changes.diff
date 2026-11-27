@@ -1,0 +1,659 @@
+diff --git a/src/main/java/com/fliq/fliq/MyBatisDB.java b/src/main/java/com/fliq/fliq/MyBatisDB.java
+--- a/src/main/java/com/fliq/fliq/MyBatisDB.java
++++ b/src/main/java/com/fliq/fliq/MyBatisDB.java
+@@ -7,15 +7,50 @@
+ 
+ import java.io.IOException;
+ import java.io.InputStream;
++import java.util.Properties;
+ 
+-// MyBatis DB 연결 설정
+ public class MyBatisDB {
++    private static SqlSessionFactory factory;
++
+     public static SqlSession connect() throws IOException {
+-        String resource = "config.xml";
+-        InputStream inputStream = Resources.getResourceAsStream(resource);
+-        SqlSessionFactory sqlSessionFactory =
+-                new SqlSessionFactoryBuilder().build(inputStream);
++        return getFactory().openSession();
++    }
+ 
+-        return sqlSessionFactory.openSession();
++    private static synchronized SqlSessionFactory getFactory() throws IOException {
++        if (factory == null) {
++            factory = buildFactory();
++        }
++        return factory;
++    }
++
++    private static SqlSessionFactory buildFactory() throws IOException {
++        String url = System.getenv("FLIQ_DB_URL");
++        String username = System.getenv("FLIQ_DB_USER");
++        String password = System.getenv("FLIQ_DB_PASSWORD");
++        SqlSessionFactoryBuilder builder = new SqlSessionFactoryBuilder();
++
++        // 환경 변수를 쓰지 않는 기존 로컬 개발 환경의 설정도 읽는다.
++        if (url == null && username == null && password == null) {
++            try (InputStream input = Resources.getResourceAsStream("config.xml")) {
++                return builder.build(input);
++            } catch (IOException e) {
++                throw new IOException("FLIQ_DB_URL, FLIQ_DB_USER, FLIQ_DB_PASSWORD 또는 로컬 config.xml을 설정해 주세요.", e);
++            }
++        }
++
++        Properties properties = new Properties();
++        properties.setProperty("db.url", required("FLIQ_DB_URL", url));
++        properties.setProperty("db.username", required("FLIQ_DB_USER", username));
++        properties.setProperty("db.password", required("FLIQ_DB_PASSWORD", password));
++        try (InputStream input = Resources.getResourceAsStream("mybatis-config.xml")) {
++            return builder.build(input, properties);
++        }
++    }
++
++    private static String required(String name, String value) throws IOException {
++        if (value == null || value.trim().isEmpty()) {
++            throw new IOException(name + " 환경 변수를 설정해 주세요.");
++        }
++        return value;
+     }
+ }
+diff --git a/src/main/resources/mybatis-config.xml b/src/main/resources/mybatis-config.xml
+new file mode 100644
+--- /dev/null
++++ b/src/main/resources/mybatis-config.xml
+@@ -0,0 +1,22 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<!DOCTYPE configuration
++        PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
++        "https://mybatis.org/dtd/mybatis-3-config.dtd">
++<configuration>
++    <environments default="oracle">
++        <environment id="oracle">
++            <transactionManager type="JDBC"/>
++            <dataSource type="POOLED">
++                <property name="driver" value="oracle.jdbc.OracleDriver"/>
++                <property name="url" value="${db.url}"/>
++                <property name="username" value="${db.username}"/>
++                <property name="password" value="${db.password}"/>
++            </dataSource>
++        </environment>
++    </environments>
++    <mappers>
++        <mapper resource="Mapper.xml"/>
++        <mapper resource="ProductMapper.xml"/>
++        <mapper resource="ChatMapper.xml"/>
++    </mappers>
++</configuration>
+diff --git a/.gitignore b/.gitignore
+--- a/.gitignore
++++ b/.gitignore
+@@ -40,5 +40,6 @@
+ 
+ .idea/
+ src/main/resources/config.xml
++/Wallet_*/
+ target/
+ src/main/webapp/WEB-INF/web.xml
+\ No newline at end of file
+diff --git a/src/main/java/com/fliq/fliq/HomeC.java b/src/main/java/com/fliq/fliq/HomeC.java
+--- a/src/main/java/com/fliq/fliq/HomeC.java
++++ b/src/main/java/com/fliq/fliq/HomeC.java
+@@ -7,7 +7,7 @@
+ import javax.servlet.http.HttpServletResponse;
+ import java.io.IOException;
+ 
+-@WebServlet("/home")
++@WebServlet({"", "/home"})
+ public class HomeC extends HttpServlet {
+ 
+     public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+diff --git a/src/main/java/com/fliq/fliq/productregister/ProductRegisterImage.java b/src/main/java/com/fliq/fliq/productregister/ProductRegisterImage.java
+--- a/src/main/java/com/fliq/fliq/productregister/ProductRegisterImage.java
++++ b/src/main/java/com/fliq/fliq/productregister/ProductRegisterImage.java
+@@ -3,28 +3,33 @@
+ import javax.imageio.ImageIO;
+ import javax.imageio.ImageReader;
+ import javax.imageio.stream.ImageInputStream;
+-import javax.servlet.http.HttpServletRequest;
+ import java.awt.image.BufferedImage;
+ import java.io.File;
+ import java.io.IOException;
+ import java.nio.file.Files;
++import java.nio.file.Path;
++import java.nio.file.Paths;
+ import java.util.Iterator;
+ 
+ class ProductRegisterImage {
+ 
+-    static File save(HttpServletRequest request, File uploadedFile) throws IOException {
++    static Path directory() throws IOException {
++        String configured = System.getenv("FLIQ_UPLOAD_DIR");
++        Path path = configured == null || configured.trim().isEmpty()
++                ? Paths.get(System.getProperty("user.home"), ".fliq", "product-images")
++                : Paths.get(configured);
++        if (!path.isAbsolute()) {
++            throw new IOException("FLIQ_UPLOAD_DIR에는 절대 경로를 지정해 주세요.");
++        }
++        return path.normalize();
++    }
++
++    static File save(File uploadedFile) throws IOException {
+         BufferedImage image = read(uploadedFile);
+-
+-        // 영화 실습과 같이 현재 배포된 웹앱에서 공개 이미지 폴더의 실제 경로를 구한다.
+-        String path = request.getServletContext().getRealPath("/productFile");
+-        if (path == null) {
+-            throw new IOException("배포된 웹앱의 이미지 저장 위치를 찾지 못했습니다.");
+-        }
+-        File folder = new File(path);
+-        Files.createDirectories(folder.toPath());
++        Path folder = Files.createDirectories(directory());
+ 
+         // 원본 이름 대신 서버가 만든 이름으로 PNG 파일을 저장한다.
+-        File savedFile = Files.createTempFile(folder.toPath(), "product-", ".png").toFile();
++        File savedFile = Files.createTempFile(folder, "product-", ".png").toFile();
+         boolean saved = false;
+         try {
+             saved = ImageIO.write(image, "png", savedFile);
+diff --git a/src/main/java/com/fliq/fliq/productregister/ProductRegisterDAO.java b/src/main/java/com/fliq/fliq/productregister/ProductRegisterDAO.java
+--- a/src/main/java/com/fliq/fliq/productregister/ProductRegisterDAO.java
++++ b/src/main/java/com/fliq/fliq/productregister/ProductRegisterDAO.java
+@@ -65,7 +65,7 @@
+             File uploadedFile = mr.getFile("file");
+             String imagePath = null;
+             if (uploadedFile != null) {
+-                imageFile = ProductRegisterImage.save(request, uploadedFile);
++                imageFile = ProductRegisterImage.save(uploadedFile);
+                 imagePath = "productFile/" + imageFile.getName();
+             }
+ 
+diff --git a/src/main/java/com/fliq/fliq/productregister/ProductRegisterC.java b/src/main/java/com/fliq/fliq/productregister/ProductRegisterC.java
+--- a/src/main/java/com/fliq/fliq/productregister/ProductRegisterC.java
++++ b/src/main/java/com/fliq/fliq/productregister/ProductRegisterC.java
+@@ -49,6 +49,7 @@
+             return;
+         }
+ 
++        ProductRegisterDAO.selectAllCategory(request);
+         // DAO가 담은 오류 메시지를 같은 요청으로 JSP에 전달한다.
+         request.getRequestDispatcher("/listing/product-form.jsp")
+                 .forward(request, response);
+diff --git a/src/main/java/com/fliq/fliq/productregister/ProductImageC.java b/src/main/java/com/fliq/fliq/productregister/ProductImageC.java
+new file mode 100644
+--- /dev/null
++++ b/src/main/java/com/fliq/fliq/productregister/ProductImageC.java
+@@ -0,0 +1,43 @@
++package com.fliq.fliq.productregister;
++
++import javax.servlet.annotation.WebServlet;
++import javax.servlet.http.HttpServlet;
++import javax.servlet.http.HttpServletRequest;
++import javax.servlet.http.HttpServletResponse;
++import java.io.IOException;
++import java.io.InputStream;
++import java.io.OutputStream;
++import java.nio.file.Files;
++import java.nio.file.LinkOption;
++import java.nio.file.NoSuchFileException;
++import java.nio.file.Path;
++
++@WebServlet("/productFile/*")
++public class ProductImageC extends HttpServlet {
++    @Override
++    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
++        String path = request.getPathInfo();
++        if (path == null || !path.matches("/product-[0-9]+\\.png")) {
++            response.sendError(HttpServletResponse.SC_NOT_FOUND);
++            return;
++        }
++
++        Path file = ProductRegisterImage.directory().resolve(path.substring(1));
++        if (!Files.isRegularFile(file, LinkOption.NOFOLLOW_LINKS)) {
++            response.sendError(HttpServletResponse.SC_NOT_FOUND);
++            return;
++        }
++
++        try (InputStream input = Files.newInputStream(file, LinkOption.NOFOLLOW_LINKS)) {
++            response.setContentType("image/png");
++            OutputStream output = response.getOutputStream();
++            byte[] buffer = new byte[8192];
++            int count;
++            while ((count = input.read(buffer)) != -1) {
++                output.write(buffer, 0, count);
++            }
++        } catch (NoSuchFileException e) {
++            response.sendError(HttpServletResponse.SC_NOT_FOUND);
++        }
++    }
++}
+diff --git a/src/main/resources/ProductMapper.xml b/src/main/resources/ProductMapper.xml
+--- a/src/main/resources/ProductMapper.xml
++++ b/src/main/resources/ProductMapper.xml
+@@ -24,13 +24,24 @@
+         AND (p.p_title LIKE #{pattern} OR p.p_description LIKE #{pattern})
+         ORDER BY p.p_created_at DESC, p.p_id DESC
+     </select>
++    <select id="listProducts" parameterType="map"
++            resultType="com.fliq.fliq.listing.ListingSearchDTO">
++        SELECT p.p_id, p.p_title, p.p_sale_type, p.p_sale_price, i.pi_storage
++        FROM product p
++        LEFT JOIN product_image i ON p.p_id = i.pi_product_id
++        WHERE p.p_sale_status != 'DELETED'
++        <if test="saleType != null">
++            AND p.p_sale_type = #{saleType, jdbcType=VARCHAR}
++        </if>
++        ORDER BY p.p_created_at DESC, p.p_id DESC
++    </select>
+     <select id="selectAllCategory" resultType="com.fliq.fliq.productregister.CategoryDTO">
+         select * from CATEGORY
+     </select>
+     <insert id="insertProductImage"
+             parameterType="com.fliq.fliq.productregister.ProductRegisterDTO">
+         INSERT INTO product_image (pi_product_id, pi_storage)
+-        VALUES (#{p_id}, #{pi_storage})
++        VALUES (#{pi_product_id}, #{pi_storage})
+     </insert>
+ 
+     <insert id="insertProduct"
+@@ -39,8 +50,8 @@
+             SELECT product_seq.NEXTVAL FROM dual
+         </selectKey>
+         INSERT INTO product (p_id, p_users_id, p_category_id, p_sale_type, p_trade_ok, p_title, p_description, p_sale_price) VALUES  (
+-        product_seq.nextval, #{p_users_id}, #{p_category_id}, 'SALE',
+-        #{p_trade_ok}, #{p_title}, #{p_description},
++        #{p_id}, #{p_users_id}, #{p_category_id}, 'SALE',
++        #{p_trade_ok}, #{p_title}, #{p_description,jdbcType=VARCHAR},
+         #{p_sale_price})
+ 
+     </insert>
+diff --git a/src/main/java/com/fliq/fliq/listing/ListingSearchDAO.java b/src/main/java/com/fliq/fliq/listing/ListingSearchDAO.java
+--- a/src/main/java/com/fliq/fliq/listing/ListingSearchDAO.java
++++ b/src/main/java/com/fliq/fliq/listing/ListingSearchDAO.java
+@@ -8,6 +8,7 @@
+ import java.io.IOException;
+ import java.sql.SQLException;
+ import java.util.ArrayList;
++import java.util.Collections;
+ import java.util.List;
+ 
+ public class ListingSearchDAO {
+@@ -27,6 +28,14 @@
+             ss.close();
+         }
+     }
++    public void listProducts(HttpServletRequest request, String saleType) throws IOException {
++        try (SqlSession session = MyBatisDB.connect()) {
++            List<ListingSearchDTO> products = session.selectList(
++                    "productMapper.listProducts", Collections.singletonMap("saleType", saleType));
++            request.setAttribute("products", products);
++        }
++    }
++
+     public void listingSearch(HttpServletRequest request) throws IOException {
+         String keyword = request.getParameter("keyword");
+             // 검색어 없이 검색한 경우 빈 목록 전달
+diff --git a/src/main/java/com/fliq/fliq/listing/ListingSearchC.java b/src/main/java/com/fliq/fliq/listing/ListingSearchC.java
+--- a/src/main/java/com/fliq/fliq/listing/ListingSearchC.java
++++ b/src/main/java/com/fliq/fliq/listing/ListingSearchC.java
+@@ -12,6 +12,20 @@
+ 
+     public void doGet(HttpServletRequest request, HttpServletResponse response)
+             throws IOException, ServletException {
++
++        String view = request.getParameter("view");
++        if ("all".equals(view) || "sale".equals(view) || "auction".equals(view)) {
++            String saleType = null;
++            if ("sale".equals(view)) {
++                saleType = "SALE";
++            } else if ("auction".equals(view)) {
++                saleType = "AUCTION";
++            }
++            ListingSearchDAO.LDAO.listProducts(request, saleType);
++            request.setAttribute("listingView", view);
++            request.getRequestDispatcher("/index.jsp").forward(request, response);
++            return;
++        }
+ 
+         ListingSearchDAO.LDAO.listingSearch(request);
+ 
+diff --git a/src/main/java/com/fliq/fliq/auction/AuctionC.java b/src/main/java/com/fliq/fliq/auction/AuctionC.java
+--- a/src/main/java/com/fliq/fliq/auction/AuctionC.java
++++ b/src/main/java/com/fliq/fliq/auction/AuctionC.java
+@@ -1,6 +1,4 @@
+ package com.fliq.fliq.auction;
+-
+-import com.fliq.fliq.signup.SignupDAO;
+ 
+ import javax.servlet.ServletException;
+ import javax.servlet.annotation.WebServlet;
+@@ -13,7 +11,7 @@
+ public class AuctionC extends HttpServlet {
+ 
+     public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+-            response.sendRedirect(request.getContextPath() + "/auction");
++        response.sendRedirect(request.getContextPath() + "/product-listing?view=auction");
+     }
+ 
+     public void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+diff --git a/src/main/webapp/index.jsp b/src/main/webapp/index.jsp
+--- a/src/main/webapp/index.jsp
++++ b/src/main/webapp/index.jsp
+@@ -5,7 +5,7 @@
+ <html>
+ <head>
+     <title>FLIQ</title>
+-    <link rel="stylesheet" href="css/home.css">
++    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/home.css">
+     <%-- 상품 목록 스타일은 공통 홈 스타일 다음에 불러온다. --%>
+     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/product-list.css">
+ </head>
+@@ -13,11 +13,11 @@
+ 
+ <div class="fliq-page">
+     <header class="fliq-header">
+-        <a id="home" class="fliq-logo" href="home" aria-label="FLIQ 홈">FLIQ</a>
++        <a id="home" class="fliq-logo" href="${pageContext.request.contextPath}/home" aria-label="FLIQ 홈">FLIQ</a>
+ 
+ 
+         <%-- 검색창과 버튼을 같은 폼에 두고 ListingSearchC로 보낸다. --%>
+-        <form class="fliq-search" action="product-listing">
++        <form class="fliq-search" action="${pageContext.request.contextPath}/product-listing">
+             <label class="fliq-visually-hidden" for="keyword">상품명 또는 설명 검색</label>
+             <input id="keyword" type="text" name="keyword" placeholder="상품명 또는 설명 검색">
+             <button id="search" class="fliq-button fliq-button--primary">검색</button>
+@@ -28,17 +28,18 @@
+             <c:choose>
+                 <c:when test="${not empty sessionScope.user}">
+                     <span><c:out value="${sessionScope.user.u_nickname}"/>님</span>
+-                    <a class="fliq-button" href="product-register">상품 등록</a>
++                    <a class="fliq-button" href="${pageContext.request.contextPath}/product-register">상품 등록</a>
++                    <a class="fliq-button" href="${pageContext.request.contextPath}/chat">채팅</a>
+ 
+                     <%-- 로그인 컨트롤러에 로그아웃 요청을 보낸다. --%>
+-                    <form action="login" method="post">
++                    <form action="${pageContext.request.contextPath}/login" method="post">
+                         <button class="fliq-button"
+                                 name="action" value="logout">로그아웃</button>
+                     </form>
+                 </c:when>
+                 <c:otherwise>
+-                    <a id="login" class="fliq-button" href="login">로그인</a>
+-                    <a id="signup" class="fliq-button" href="sign-up">회원가입</a>
++                    <a id="login" class="fliq-button" href="${pageContext.request.contextPath}/login">로그인</a>
++                    <a id="signup" class="fliq-button" href="${pageContext.request.contextPath}/sign-up">회원가입</a>
+                 </c:otherwise>
+             </c:choose>
+         </nav>
+@@ -49,17 +50,17 @@
+             <h1 id="hero-title">사고 · 입찰하고 · 바꾸다</h1>
+             <p>일반판매와 경매 상품을 둘러보고 1:1 교환을 제안해 보세요.</p>
+             <a id="browse-products" class="fliq-button fliq-button--primary"
+-               href="products">상품 둘러보기</a>
++               href="<c:url value='/product-listing?view=all'/>">상품 둘러보기</a>
+         </section>
+ 
+ 
+         <nav class="fliq-filters" aria-label="판매 방식">
+             <a id="filter-all" class="fliq-button fliq-button--primary"
+-               href="product">전체</a>
++               href="<c:url value='/product-listing?view=all'/>">전체</a>
+             <a id="filter-sale" class="fliq-button fliq-filter-sale"
+-               href="sell">일반판매</a>
++               href="<c:url value='/product-listing?view=sale'/>">일반판매</a>
+             <a id="filter-auction" class="fliq-button fliq-filter-auction"
+-               href="auction">경매</a>
++               href="${pageContext.request.contextPath}/auction">경매</a>
+         </nav>
+ 
+         <section class="fliq-product-list" aria-labelledby="recent-title">
+@@ -69,6 +70,9 @@
+                     <c:when test="${not empty keyword}">
+                         ‘<c:out value="${keyword}" />’ 검색 결과 <c:out value="${resultCount}" />건
+                     </c:when>
++                    <c:when test="${listingView eq 'all'}">전체 상품</c:when>
++                    <c:when test="${listingView eq 'sale'}">일반판매 상품</c:when>
++                    <c:when test="${listingView eq 'auction'}">경매 상품</c:when>
+                     <c:otherwise>
+                         최근 등록 상품
+                     </c:otherwise>
+diff --git a/src/main/java/com/fliq/fliq/chat/ChatC.java b/src/main/java/com/fliq/fliq/chat/ChatC.java
+--- a/src/main/java/com/fliq/fliq/chat/ChatC.java
++++ b/src/main/java/com/fliq/fliq/chat/ChatC.java
+@@ -1,29 +1,53 @@
+ package com.fliq.fliq.chat;
+ 
+-import com.fliq.fliq.signup.SignupDAO;
++import com.fliq.fliq.signup.SignupDTO;
+ 
+ import javax.servlet.ServletException;
+ import javax.servlet.annotation.WebServlet;
+ import javax.servlet.http.HttpServlet;
+ import javax.servlet.http.HttpServletRequest;
+ import javax.servlet.http.HttpServletResponse;
++import javax.servlet.http.HttpSession;
+ import java.io.IOException;
+ 
+ @WebServlet("/chat")
+ public class ChatC extends HttpServlet {
++    @Override
++    protected void doGet(HttpServletRequest request, HttpServletResponse response)
++            throws IOException, ServletException {
++        HttpSession session = request.getSession(false);
++        SignupDTO user = session == null ? null : (SignupDTO) session.getAttribute("user");
++        if (user == null) {
++            response.sendRedirect(request.getContextPath() + "/login");
++            return;
++        }
+ 
+-    public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
++        String roomParameter = request.getParameter("roomId");
++        if (roomParameter == null) {
++            request.setAttribute("rooms", ChatRoomDAO.listForUser(user.getU_id()));
++            request.getRequestDispatcher("/chat/chatRooms.jsp").forward(request, response);
++            return;
++        }
+ 
+-        if (SignupDAO.loginCheck(request)) {
+-            request.getRequestDispatcher("chatMessages.jsp").forward(request, response);
++        long roomId;
++        try {
++            roomId = Long.parseLong(roomParameter);
++        } catch (NumberFormatException e) {
++            response.sendError(HttpServletResponse.SC_BAD_REQUEST);
++            return;
+         }
+-        else {
+-            request.getRequestDispatcher("/user/login.jsp").forward(request, response);
++        if (roomId <= 0) {
++            response.sendError(HttpServletResponse.SC_BAD_REQUEST);
++            return;
+         }
++
++        ChatRoomDTO room = ChatRoomDAO.findForUser(roomId, user.getU_id());
++        if (room == null) {
++            response.sendError(HttpServletResponse.SC_NOT_FOUND);
++            return;
++        }
++        request.setAttribute("room", room);
++        request.setAttribute("messages", ChatMessageDAO.listForRoom(roomId));
++        request.getRequestDispatcher("/chat/chatMessages.jsp").forward(request, response);
+     }
+-
+-    public void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+-
+-    }
+-
+-}
+\ No newline at end of file
++}
+diff --git a/src/main/java/com/fliq/fliq/chat/ChatRoomDAO.java b/src/main/java/com/fliq/fliq/chat/ChatRoomDAO.java
+--- a/src/main/java/com/fliq/fliq/chat/ChatRoomDAO.java
++++ b/src/main/java/com/fliq/fliq/chat/ChatRoomDAO.java
+@@ -3,18 +3,24 @@
+ import com.fliq.fliq.MyBatisDB;
+ import org.apache.ibatis.session.SqlSession;
+ 
+-import javax.servlet.http.HttpServletRequest;
++import java.io.IOException;
++import java.util.HashMap;
+ import java.util.List;
++import java.util.Map;
+ 
+ public class ChatRoomDAO {
++    public static List<ChatRoomDTO> listForUser(long userId) throws IOException {
++        try (SqlSession session = MyBatisDB.connect()) {
++            return session.selectList("chatMapper.listChatRoomsForUser", userId);
++        }
++    }
+ 
+-    public static void getChatRoomById(HttpServletRequest request, long roomId) {
+-        try (SqlSession ss = MyBatisDB.connect()) {
+-            ChatRoomDTO room = ss.selectOne("chatMapper.findChatRoomByRoomId", roomId);
+-            request.setAttribute("room", room);
+-        }
+-        catch (Exception e) {
+-            e.printStackTrace();
++    public static ChatRoomDTO findForUser(long roomId, long userId) throws IOException {
++        Map<String, Long> params = new HashMap<>();
++        params.put("roomId", roomId);
++        params.put("userId", userId);
++        try (SqlSession session = MyBatisDB.connect()) {
++            return session.selectOne("chatMapper.findChatRoomByRoomId", params);
+         }
+     }
+ }
+diff --git a/src/main/java/com/fliq/fliq/chat/ChatMessageDAO.java b/src/main/java/com/fliq/fliq/chat/ChatMessageDAO.java
+--- a/src/main/java/com/fliq/fliq/chat/ChatMessageDAO.java
++++ b/src/main/java/com/fliq/fliq/chat/ChatMessageDAO.java
+@@ -3,19 +3,13 @@
+ import com.fliq.fliq.MyBatisDB;
+ import org.apache.ibatis.session.SqlSession;
+ 
+-import javax.servlet.http.HttpServletRequest;
++import java.io.IOException;
+ import java.util.List;
+ 
+ public class ChatMessageDAO {
+-
+-//  room id를 받아서 select로 조회된 메시지들을 attribute로 보냄.
+-    public static void getChatMessagesByRoomId(HttpServletRequest request, long roomId) {
+-        try (SqlSession ss = MyBatisDB.connect()) {
+-            List<ChatMessageDTO> messages = ss.selectList("chatMapper.findChatMessagesByRoomId", roomId);
+-            request.setAttribute("messages", messages);
+-        }
+-        catch (Exception e) {
+-            e.printStackTrace();
++    public static List<ChatMessageDTO> listForRoom(long roomId) throws IOException {
++        try (SqlSession session = MyBatisDB.connect()) {
++            return session.selectList("chatMapper.findChatMessagesByRoomId", roomId);
+         }
+     }
+ }
+diff --git a/src/main/resources/ChatMapper.xml b/src/main/resources/ChatMapper.xml
+--- a/src/main/resources/ChatMapper.xml
++++ b/src/main/resources/ChatMapper.xml
+@@ -10,10 +10,18 @@
+         WHERE cm_chat_room_id = #{roomId}
+         ORDER BY cm_created_at, cm_id
+     </select>
+-    <!-- 룸id로 룸 정보 조회 -->
+-    <select id="findChatRoomByRoomId" resultType="com.fliq.fliq.chat.ChatRoomDTO">
++    <select id="listChatRoomsForUser" parameterType="long"
++            resultType="com.fliq.fliq.chat.ChatRoomDTO">
++        SELECT cr_id, cr_product_id, cr_seller_id, cr_buyer_id
++        FROM chat_room
++        WHERE cr_seller_id = #{userId} OR cr_buyer_id = #{userId}
++        ORDER BY cr_created_at DESC, cr_id DESC
++    </select>
++    <!-- 요청한 회원이 참여하는 채팅방만 조회한다. -->
++    <select id="findChatRoomByRoomId" parameterType="map" resultType="com.fliq.fliq.chat.ChatRoomDTO">
+         SELECT cr_id, cr_product_id, cr_seller_id, cr_buyer_id
+         FROM chat_room
+         WHERE cr_id = #{roomId}
++        AND (cr_seller_id = #{userId} OR cr_buyer_id = #{userId})
+     </select>
+ </mapper>
+\ No newline at end of file
+diff --git a/src/main/webapp/chat/chatRooms.jsp b/src/main/webapp/chat/chatRooms.jsp
+--- a/src/main/webapp/chat/chatRooms.jsp
++++ b/src/main/webapp/chat/chatRooms.jsp
+@@ -1,9 +1,27 @@
+-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+-<html>
++<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
++<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
++<!DOCTYPE html>
++<html lang="ko">
+ <head>
+-    <title>Title</title>
++    <meta charset="UTF-8">
++    <title>채팅방 | FLIQ</title>
++    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/home.css">
+ </head>
+ <body>
+-
++<main class="fliq-page">
++    <a href="${pageContext.request.contextPath}/home">홈</a>
++    <h1>내 채팅방</h1>
++    <c:if test="${empty rooms}"><p>참여 중인 채팅방이 없습니다.</p></c:if>
++    <c:if test="${not empty rooms}">
++        <ul>
++            <c:forEach var="room" items="${rooms}">
++                <c:url var="roomUrl" value="/chat">
++                    <c:param name="roomId" value="${room.cr_id}"/>
++                </c:url>
++                <li><a href="<c:out value='${roomUrl}'/>">상품 <c:out value="${room.cr_product_id}"/> 채팅방</a></li>
++            </c:forEach>
++        </ul>
++    </c:if>
++</main>
+ </body>
+ </html>
+diff --git a/src/main/webapp/chat/chatMessages.jsp b/src/main/webapp/chat/chatMessages.jsp
+--- a/src/main/webapp/chat/chatMessages.jsp
++++ b/src/main/webapp/chat/chatMessages.jsp
+@@ -1,9 +1,27 @@
+-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+-<html>
++<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
++<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
++<!DOCTYPE html>
++<html lang="ko">
+ <head>
+-    <title>Title</title>
++    <meta charset="UTF-8">
++    <title>채팅 메시지 | FLIQ</title>
++    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/home.css">
+ </head>
+ <body>
+-
++<main class="fliq-page">
++    <a href="${pageContext.request.contextPath}/chat">채팅방 목록</a>
++    <h1>채팅 메시지</h1>
++    <c:if test="${not empty room}">
++        <p>상품 번호 <c:out value="${room.cr_product_id}"/></p>
++    </c:if>
++    <c:if test="${empty messages}"><p>표시할 메시지가 없습니다.</p></c:if>
++    <c:if test="${not empty messages}">
++        <ol>
++            <c:forEach var="message" items="${messages}">
++                <li>회원 <c:out value="${message.cm_sender_id}"/> · <c:out value="${message.cm_text_body}"/></li>
++            </c:forEach>
++        </ol>
++    </c:if>
++</main>
+ </body>
+ </html>
+diff --git a/src/main/webapp/DDL.sql b/db/DDL.sql
+similarity index 100%
+rename from src/main/webapp/DDL.sql
+rename to db/DDL.sql
+diff --git a/src/main/webapp/DML.sql b/db/DML.sql
+similarity index 100%
+rename from src/main/webapp/DML.sql
+rename to db/DML.sql
+diff --git a/src/main/webapp/DCL.sql b/db/DCL.sql
+similarity index 100%
+rename from src/main/webapp/DCL.sql
+rename to db/DCL.sql
