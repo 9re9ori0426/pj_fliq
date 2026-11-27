@@ -7,14 +7,16 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 
 public class ChatRoomDAO {
-
-    public static void getChatRoomById(HttpServletRequest request, long roomId) {
+    // userId로 채팅방들의 정보를 찾아서 rooms로 넘김
+    public static void chatRooms(HttpServletRequest request, long userId) {
         try (SqlSession ss = MyBatisDB.connect()) {
-            ChatRoomDTO room = ss.selectOne("chatMapper.findChatRoomByRoomId", roomId);
-            request.setAttribute("room", room);
+            List<ChatRoomDTO> rooms = ss.selectList("chatMapper.findChatRooms", userId);
+
+            request.setAttribute("rooms", rooms);
         }
         catch (Exception e) {
             e.printStackTrace();
         }
     }
 }
+

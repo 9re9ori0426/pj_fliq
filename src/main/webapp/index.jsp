@@ -28,6 +28,7 @@
             <c:choose>
                 <c:when test="${not empty sessionScope.user}">
                     <span><c:out value="${sessionScope.user.u_nickname}"/>님</span>
+                    <a class="fliq-button" href="chat">채팅방</a>
                     <a class="fliq-button" href="product-register">상품 등록</a>
 
                     <%-- 로그인 컨트롤러에 로그아웃 요청을 보낸다. --%>
