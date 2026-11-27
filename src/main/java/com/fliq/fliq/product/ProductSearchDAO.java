@@ -1,33 +1,35 @@
-package com.fliq.fliq.listing;
+package com.fliq.fliq.product;
 
 import com.fliq.fliq.MyBatisDB;
 import org.apache.ibatis.session.SqlSession;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ListingSearchDAO {
+public class ProductSearchDAO {
 
-    public static  final ListingSearchDAO LDAO = new ListingSearchDAO();
-    private ListingSearchDAO() {
+    public static final ProductSearchDAO PDAO = new ProductSearchDAO();
+    private ProductSearchDAO() {
     }
 
-    public void recentProducts(HttpServletRequest request) throws IOException {
+    public void listProducts(HttpServletRequest request, boolean saleOnly) throws IOException {
         SqlSession ss = MyBatisDB.connect();
         try {
-            List<ListingSearchDTO> products = ss.selectList("productMapper.recentProducts");
-
-            // 최근 상품 목록을 index.jsp에서 읽을 수 있게 담아 둔다.
+            List<ProductSearchDTO> products;
+            if (saleOnly) {
+                products = ss.selectList("productMapper.getSaleProducts");
+            } else {
+                products = ss.selectList("productMapper.getAllProducts");
+            }
             request.setAttribute("products", products);
         } finally {
             ss.close();
         }
     }
-    public void listingSearch(HttpServletRequest request) throws IOException {
+
+    public void searchProducts(HttpServletRequest request) throws IOException {
         String keyword = request.getParameter("keyword");
             // 검색어 없이 검색한 경우 빈 목록 전달
         if (keyword == null) {
@@ -35,7 +37,7 @@ public class ListingSearchDAO {
         }
         keyword = keyword.trim();
 
-        List<ListingSearchDTO> products = new ArrayList<>();
+        List<ProductSearchDTO> products = new ArrayList<>();
 
         if (!keyword.isEmpty()) {
             // 검색어 앞뒤에 %를 붙여 상품명이나 설명의 중간에 있는 단어도 찾는다.
@@ -50,7 +52,7 @@ public class ListingSearchDAO {
             }
         }
 
-        // ListingC가 검색 결과 JSP로 forward할 때 사용하는 요청 속성이다.
+        // ProductSearchC가 검색 결과 JSP로 forward할 때 사용하는 요청 속성이다.
         request.setAttribute("keyword", keyword);
         request.setAttribute("products", products);
         // 현재 검색으로 조회한 상품 수를 결과 화면에 전달한다.

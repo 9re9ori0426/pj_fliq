@@ -2,7 +2,7 @@
 body.fliq-auth {
     min-height: 100vh;
     padding: 48px 20px;
-    background: var(--fliq-surface);
+    background: linear-gradient(to bottom, var(--fliq-ink) 0 180px, var(--fliq-surface) 180px);
 }
 
 .fliq-auth__shell {
@@ -12,20 +12,24 @@ body.fliq-auth {
 }
 
 .fliq-auth__header {
-    margin-bottom: 22px;
+    margin-bottom: 16px;
 }
+
+.fliq-auth__header .fliq-logo { color: #fff; }
 
 .fliq-auth__card {
     padding: 32px;
     border: 1px solid var(--fliq-line);
-    border-radius: 16px;
+    border-top: 4px solid var(--fliq-blue);
+    border-radius: 10px;
     background: #fff;
-    box-shadow: 0 8px 28px rgba(25, 45, 66, 0.06);
+    box-shadow: 0 12px 32px rgba(17, 22, 34, 0.08);
 }
 
 .fliq-auth__title {
     margin: 0 0 24px;
-    font-size: 26px;
+    font-size: 30px;
+    letter-spacing: -0.04em;
     line-height: 1.3;
 }
 
@@ -46,7 +50,7 @@ body.fliq-auth {
     min-height: 46px;
     padding: 10px 12px;
     border: 1px solid var(--fliq-line);
-    border-radius: 9px;
+    border-radius: 6px;
     background: #fff;
     color: var(--fliq-ink);
     font: inherit;
@@ -67,7 +71,7 @@ body.fliq-auth {
     padding: 10px 12px;
     border-left: 3px solid var(--fliq-blue);
     border-radius: 6px;
-    background: var(--fliq-surface);
+    background: var(--fliq-blue-light);
     color: var(--fliq-ink);
     font-size: 14px;
 }
