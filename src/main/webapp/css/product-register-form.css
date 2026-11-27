@@ -1,7 +1,7 @@
 /* 공통 색상과 버튼은 home.css에 정의된 값을 사용한다. */
 .register-page {
     max-width: 1040px;
-    margin: 24px auto;
+    margin: 0 auto;
 }
 
 .register-page .fliq-header {
@@ -10,19 +10,21 @@
 }
 
 .register-content {
-    padding: 24px;
+    padding: 24px 24px 48px;
 }
 
 .register-card {
     padding: 28px;
     border: 1px solid var(--fliq-line);
-    border-radius: 14px;
+    border-radius: 10px;
+    border-top: 4px solid var(--fliq-ink);
     background: #fff;
 }
 
 .register-card h1 {
     margin: 0 0 24px;
-    font-size: 28px;
+    font-size: 30px;
+    letter-spacing: -0.04em;
     line-height: 1.3;
 }
 
@@ -42,8 +44,8 @@
 .register-sale {
     padding: 20px;
     border: 1px solid var(--fliq-line);
-    border-radius: 12px;
-    background: var(--fliq-surface);
+    border-radius: 8px;
+    background: var(--fliq-blue-light);
 }
 
 .register-field {
@@ -62,7 +64,7 @@
     margin-top: 6px;
     padding: 10px 12px;
     border: 1px solid var(--fliq-line);
-    border-radius: 8px;
+    border-radius: 6px;
     color: var(--fliq-ink);
     background: #fff;
     font: inherit;
@@ -79,6 +81,17 @@
     padding: 14px 12px;
     border-style: dashed;
     background: var(--fliq-surface);
+}
+
+.register-field input::file-selector-button {
+    margin-right: 10px;
+    padding: 7px 12px;
+    border: 0;
+    border-radius: 4px;
+    background: var(--fliq-ink);
+    color: #fff;
+    font: inherit;
+    cursor: pointer;
 }
 
 /* JS가 hidden을 해제한 사진만 표시한다. contain은 사진 전체가 보이게 한다. */

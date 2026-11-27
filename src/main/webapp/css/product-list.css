@@ -1,30 +1,56 @@
 /* 메인과 검색 화면에서 공통으로 쓰는 상품 목록 */
 .fliq-product-list .fliq-section-title {
-    margin-bottom: 14px;
+    margin-bottom: 18px;
+    letter-spacing: -0.035em;
+    padding-left: 12px;
+    border-left: 5px solid var(--fliq-blue);
+    font-size: clamp(24px, 3vw, 34px);
 }
 
 .fliq-product-list .fliq-product-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 20px;
+    gap: 24px 18px;
+}
+
+.fliq-product-list .fliq-product-grid--feed {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .fliq-product-list .fliq-card {
     min-width: 0;
     padding: 0;
     overflow: hidden;
+    border-radius: 10px;
+    border-color: #dee3ec;
 }
 
-.fliq-product-list .fliq-card:hover {
-    box-shadow: 0 4px 16px rgba(25, 45, 66, 0.08);
+.fliq-product-grid--feed .fliq-card__body {
+    background: var(--fliq-ink);
+    color: #fff;
+    flex: 1;
+}
+
+.fliq-product-grid--feed .fliq-card {
+    display: flex;
+    flex-direction: column;
+}
+
+.fliq-product-grid--feed .fliq-card__body .fliq-card__price { color: #fff; }
+
+/* 상세 화면으로 연결되는 경매 카드에만 링크 반응을 준다. */
+.fliq-product-list a.fliq-card:hover,
+.fliq-product-list a.fliq-card:focus-visible {
+    border-color: var(--fliq-blue);
+    box-shadow: 0 3px 12px rgba(17, 22, 34, 0.10);
 }
 
 .fliq-product-list .fliq-card__thumbnail {
     display: grid;
     place-items: center;
     height: auto;
-    aspect-ratio: 4 / 3;
+    aspect-ratio: 1 / 1;
     overflow: hidden;
-    border-bottom: 1px solid var(--fliq-line);
+    border-bottom: 1px solid #e4e8ef;
     border-radius: 0;
     background: var(--fliq-surface);
     color: var(--fliq-muted);
@@ -39,12 +65,13 @@
 }
 
 .fliq-card__body {
-    padding: 14px 16px 16px;
+    padding: 14px 16px 18px;
 }
 
 .fliq-product-list .fliq-card__title {
-    margin: 0 0 8px;
-    font-size: 17px;
+    margin: 0 0 6px;
+    font-size: 16px;
+    font-weight: 600;
     line-height: 1.4;
     overflow-wrap: anywhere;
 }
@@ -52,24 +79,43 @@
 .fliq-product-list .fliq-card__price {
     margin: 0;
     font-size: 20px;
-    font-weight: 750;
+    color: var(--fliq-ink);
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
 }
 
 .fliq-card__type {
+    display: inline-block;
     margin: 0;
-    color: var(--fliq-muted);
-    font-size: 14px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    color: var(--fliq-blue);
+    background: var(--fliq-blue-light);
+    font-size: 13px;
+    font-weight: 700;
 }
 
 .fliq-product-list__empty {
     grid-column: 1 / -1;
     margin: 0;
-    padding: 26px 12px;
+    padding: 40px 16px;
     border: 1px dashed var(--fliq-line);
     border-radius: 13px;
     color: var(--fliq-muted);
-    background: #fff;
+    background: var(--fliq-surface);
     text-align: center;
+}
+
+.fliq-filters a[aria-current="true"] {
+    border-color: var(--fliq-ink);
+    color: #fff;
+    background: var(--fliq-ink);
+}
+
+@media (max-width: 1000px) {
+    .fliq-product-list .fliq-product-grid--feed {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
 }
 
 @media (max-width: 760px) {
@@ -80,7 +126,32 @@
 }
 
 @media (max-width: 420px) {
-    .fliq-product-list .fliq-product-grid {
+    .fliq-card__body { padding: 10px 12px 14px; }
+    .fliq-product-list .fliq-card__price { font-size: 18px; }
+    .fliq-product-list .fliq-product-grid:not(.fliq-product-grid--feed) {
         grid-template-columns: minmax(0, 1fr);
     }
+}
+/* 마우스를 올린 상품 카드만 살짝 확대 */
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+    .fliq-product-grid--feed .fliq-card {
+        position: relative;
+        transition: transform 180ms ease, box-shadow 180ms ease;
+    }
+
+    .fliq-product-grid--feed .fliq-card:hover {
+        z-index: 1;
+        transform: scale(1.04);
+        box-shadow: 0 8px 20px rgba(17, 22, 34, 0.18);
+    }
+}
+
+.fliq-card__detail-link {
+    color: inherit;
+}
+
+.fliq-card__detail-link::after {
+    content: "";
+    position: absolute;
+    inset: 0;
 }

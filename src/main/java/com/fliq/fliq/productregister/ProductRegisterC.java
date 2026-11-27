@@ -27,7 +27,7 @@ public class ProductRegisterC extends HttpServlet {
             request.setAttribute("registerSuccess", true);
         }
         ProductRegisterDAO.selectAllCategory(request);
-        request.getRequestDispatcher("/listing/product-form.jsp")
+        request.getRequestDispatcher("/product/product-form.jsp")
                 .forward(request, response);
     }
 
@@ -50,7 +50,7 @@ public class ProductRegisterC extends HttpServlet {
         }
 
         // DAO가 담은 오류 메시지를 같은 요청으로 JSP에 전달한다.
-        request.getRequestDispatcher("/listing/product-form.jsp")
+        request.getRequestDispatcher("/product/product-form.jsp")
                 .forward(request, response);
     }
 

@@ -1,9 +1,10 @@
 :root {
-    --fliq-blue: #2359bf;
-    --fliq-ink: #192d42;
-    --fliq-muted: #465e75;
-    --fliq-line: #cbdbea;
-    --fliq-surface: #f2f6f9;
+    --fliq-blue: #2352d9;
+    --fliq-ink: #111622;
+    --fliq-muted: #505c70;
+    --fliq-line: #cdd3df;
+    --fliq-surface: #f2f4f8;
+    --fliq-blue-light: #edf2ff;
 }
 
 * { box-sizing: border-box; }
@@ -15,37 +16,45 @@ body {
 }
 
 .fliq-page {
-    width: calc(100% - 16px);
-    max-width: 1276px;
-    margin: 6px auto;
-    border: 1px solid var(--fliq-line);
-    border-radius: 17px;
-    background: var(--fliq-surface);
+    width: 100%;
+    max-width: 1320px;
+    margin: 0 auto;
+    background: #fff;
 }
 
 /* 로고, 검색창, 회원 메뉴 */
 .fliq-header {
     display: flex;
     align-items: center;
-    gap: 52px;
-    min-height: 80px;
-    padding: 12px 28px;
-    border-bottom: 1px solid var(--fliq-line);
-    border-radius: 16px;
-    background: #fff;
+    gap: 32px;
+    min-height: 76px;
+    padding: 16px 32px;
+    border-bottom: 3px solid var(--fliq-blue);
+    background: var(--fliq-ink);
+    color: #fff;
 }
 
+.fliq-header .fliq-logo { color: #fff; }
+.fliq-header .fliq-account .fliq-button { background: #20293b; color: #fff; border-color: #566179; }
+.fliq-header .fliq-account .fliq-button:hover { background: var(--fliq-blue); }
+
 .fliq-logo {
-    color: var(--fliq-blue);
-    font-size: 30px;
-    font-weight: 800;
+    color: var(--fliq-ink);
+    font-size: 34px;
+    font-weight: 900;
+    font-style: italic;
+    letter-spacing: -0.07em;
     text-decoration: none;
 }
 
 .fliq-search {
     display: flex;
     flex: 1 1 524px;
-    gap: 8px;
+    gap: 4px;
+    padding: 3px;
+    border: 1px solid var(--fliq-line);
+    border-radius: 8px;
+    background: var(--fliq-surface);
     min-width: 0;
     max-width: 524px;
 }
@@ -54,36 +63,40 @@ body {
     flex: 1;
     min-width: 0;
     padding: 0 15px;
-    border: 1px solid var(--fliq-line);
-    border-radius: 10px;
+    border: 0;
+    border-radius: 5px;
+    background: transparent;
     color: var(--fliq-ink);
     font: inherit;
-    font-size: 18px;
+    font-size: 16px;
 }
 
 .fliq-search input::placeholder { color: var(--fliq-muted); }
-.fliq-search button { min-width: 84px; }
+.fliq-search button { min-height: 38px; border-radius: 5px; }
 
 .fliq-account {
     display: flex;
-    gap: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
     margin-left: auto;
 }
 
-.fliq-account .fliq-button { min-width: 151px; }
+.fliq-account > span { overflow-wrap: anywhere; }
+.fliq-account .fliq-button { padding: 0 14px; }
 
 .fliq-button {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-height: 53px;
-    padding: 0 23px;
+    min-height: 44px;
+    padding: 0 18px;
     border: 1px solid var(--fliq-line);
-    border-radius: 10px;
-    color: #23546f;
+    border-radius: 6px;
+    color: var(--fliq-ink);
     background: #fff;
     font: inherit;
-    font-size: 18px;
+    font-size: 15px;
     font-weight: 700;
     text-decoration: none;
     white-space: nowrap;
@@ -96,43 +109,49 @@ body {
     background: var(--fliq-blue);
 }
 
-.fliq-button:hover, .fliq-card:hover { border-color: var(--fliq-blue); }
+.fliq-button:hover { border-color: var(--fliq-blue); color: var(--fliq-blue); }
+.fliq-button--primary:hover { background: #193eac; color: #fff; }
 .fliq-page :focus-visible { outline: 2px solid var(--fliq-blue); outline-offset: 3px; }
 
 /* 소개 배너와 판매 방식 버튼 */
-.fliq-main { padding: 25px 30px 24px; }
+.fliq-main { padding: 24px 32px 64px; }
 
 .fliq-hero {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-rows: auto 1fr;
-    gap: 15px 24px;
-    min-height: 188px;
-    padding: 21px 28px 30px 31px;
-    border-radius: 14px;
-    background: #e2ebff;
+    justify-items: start;
+    align-content: center;
+    gap: 10px;
+    padding: clamp(30px, 5vw, 68px) clamp(24px, 5vw, 68px);
+    border-radius: 12px;
+    color: #fff;
+    /* 오른쪽 가장자리에 동심원을 배치해 제목과 그림이 겹치지 않게 한다. */
+    background-color: #153da9;
+    background-image: linear-gradient(90deg, #153da9 20%, transparent 78%),
+        repeating-radial-gradient(circle at 98% 115%, #163797 0 36px, #315de0 37px 69px, #6b91ff 70px 74px);
 }
 
 .fliq-hero h1 {
-    grid-column: 1 / -1;
     margin: 0;
-    font-size: clamp(27px, 4vw, 40px);
-    line-height: 1.3;
+    font-size: clamp(32px, 5vw, 68px);
+    line-height: 1.2;
+    letter-spacing: -0.045em;
+    word-break: keep-all;
 }
 
-.fliq-hero p { margin: 0; color: var(--fliq-muted); font-size: 20px; }
-.fliq-hero .fliq-button { align-self: end; min-width: 221px; }
+.fliq-hero p { margin: 0; color: #e3eaff; font-size: 16px; word-break: keep-all; }
+.fliq-hero .fliq-button { margin-top: 10px; border-color: #fff; background: #fff; color: #153da9; }
+.fliq-hero .fliq-button:hover { background: var(--fliq-blue-light); }
 
 .fliq-filters {
     display: flex;
     flex-wrap: wrap;
-    gap: 11px;
-    margin: 24px 0 14px;
+    gap: 6px;
+    margin: 22px 0 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--fliq-line);
 }
 
-.fliq-filters .fliq-button { min-width: 110px; }
-.fliq-filters .fliq-filter-sale { min-width: 152px; }
-.fliq-filters .fliq-filter-auction { min-width: 122px; }
+.fliq-filters .fliq-button { min-width: 76px; border-radius: 24px; }
 .fliq-section-title { margin: 0 0 7px; font-size: 24px; line-height: 34px; }
 
 /* 최근 등록 상품 카드 */
@@ -247,16 +266,17 @@ body {
 
 @media (max-width: 760px) {
     .fliq-header { flex-wrap: wrap; gap: 12px; padding: 12px 16px; }
-    .fliq-account { gap: 8px; }
+    .fliq-account { max-width: 100%; gap: 6px; }
     .fliq-search { order: 1; flex-basis: 100%; max-width: none; }
     .fliq-button { min-height: 44px; padding: 0 14px; font-size: 16px; }
     .fliq-main { padding: 16px; }
-    .fliq-hero { grid-template-columns: 1fr; grid-template-rows: auto; min-height: 0; padding: 18px; }
+    .fliq-hero { padding: 24px 20px; background-size: 150% 100%; }
     .fliq-hero .fliq-button { justify-self: start; min-width: 0; }
     .fliq-filters .fliq-button { min-width: 0; }
     .fliq-product-grid { gap: 14px; }
 }
 
 @media (max-width: 480px) {
+    .fliq-account .fliq-button { padding: 0 10px; font-size: 14px; }
     .fliq-product-grid { gap: 8px; }
 }

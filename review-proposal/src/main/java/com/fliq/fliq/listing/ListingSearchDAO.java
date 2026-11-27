@@ -8,6 +8,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class ListingSearchDAO {
@@ -27,6 +28,14 @@ public class ListingSearchDAO {
             ss.close();
         }
     }
+    public void listProducts(HttpServletRequest request, String saleType) throws IOException {
+        try (SqlSession session = MyBatisDB.connect()) {
+            List<ListingSearchDTO> products = session.selectList(
+                    "productMapper.listProducts", Collections.singletonMap("saleType", saleType));
+            request.setAttribute("products", products);
+        }
+    }
+
     public void listingSearch(HttpServletRequest request) throws IOException {
         String keyword = request.getParameter("keyword");
             // 검색어 없이 검색한 경우 빈 목록 전달

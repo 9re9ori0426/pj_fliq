@@ -1,4 +1,4 @@
-package com.fliq.fliq.listing;
+package com.fliq.fliq.product;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class ListingSearchDTO {
+public class ProductSearchDTO {
     private long p_id;       // 상품 상세 조회에 넘길 상품 번호
     private String p_title;  // 검색 결과 카드에 표시할 상품명
 
