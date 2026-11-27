@@ -60,3 +60,28 @@ FROM product p
          JOIN users u ON u.u_id = p.p_users_id
 WHERE p.p_title = 'hg1 판매자 연동 확인'
 ORDER BY p.p_id DESC;
+
+-- 경매페이지 확인용 상품(경매태그)더미데이터
+INSERT INTO product (
+    p_id, p_users_id, p_category_id, p_sale_type,
+    p_title, p_description, p_sale_price
+)
+SELECT product_seq.NEXTVAL, u.u_id, c.c_id, 'AUCTION',
+       '오타니 친필싸인카드', '테스트용 더미데이터', 0
+FROM users u
+         CROSS JOIN category c
+WHERE u.u_email = 'email'
+  AND c.c_name = '스타굿즈';
+
+-- 경매 연결확인용 위상품과 연결된 경매 더미데이터
+INSERT INTO auction (
+    a_id, a_product_id, a_start_price,
+    a_period_code, a_start_at, a_end_at
+) VALUES (
+             auction_seq.NEXTVAL,              -- 새 경매 번호
+             61,                               -- 오타니 사인카드의 상품 번호
+             10000,                            -- 시작가 10,000원
+             'M1',
+             SYSTIMESTAMP,
+             SYSTIMESTAMP + INTERVAL '1' MONTH
+         );

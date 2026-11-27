@@ -13,7 +13,9 @@ import java.io.IOException;
 public class AuctionC extends HttpServlet {
 
     public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
-            response.sendRedirect(request.getContextPath() + "/auction");
+        AuctionDAO.ADAO.selectAuctionList(request);
+        request.setAttribute("content", "auction/auction.jsp");
+        request.getRequestDispatcher("index.jsp").forward(request, response);
     }
 
     public void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
